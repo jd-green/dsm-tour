@@ -1,0 +1,163 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tesla Tour Companion</title>
+<style>
+:root{--bg:#0e0f12;--fg:#f4f4f5;--mut:#9ca3af;--card:#1b1d22;--acc:#f26a1b;--river:#3b8fe8}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;background:var(--bg);color:var(--fg);font:20px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+#app{display:grid;grid-template-columns:1.2fr 1fr;height:100vh}
+@media (max-width:800px){#app{grid-template-columns:1fr;grid-template-rows:45vh 1fr}body{overflow:auto}}
+#map{position:relative;background:#16181d;overflow:hidden}
+svg{shape-rendering:optimizeSpeed;width:100%;height:100%;display:block}
+.mapbtns{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:8px}
+.mapbtns button{font-size:18px;font-weight:800;padding:12px 16px;border:0;border-radius:10px;background:#000a;color:#fff}
+#maptag{position:absolute;left:12px;bottom:8px;font-size:12px;color:#888}
+#side{display:flex;flex-direction:column;padding:20px 24px;gap:14px;overflow:auto}
+#kicker{font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);font-weight:800}
+#title{font-size:42px;font-weight:850;line-height:1.05;margin-top:2px}
+#area{color:var(--mut);font-size:18px}
+#desc{font-size:23px;line-height:1.45}
+#nextup{color:var(--mut);font-size:18px}
+#poi{display:none;flex-direction:column;gap:10px}
+#poi.on{display:flex}
+#poi img{width:100%;max-height:42vh;object-fit:cover;border-radius:14px;background:#222}
+#poidir{font-size:30px;font-weight:900;color:var(--acc)}
+#poiname{font-size:38px;font-weight:850;line-height:1.05}
+#poicap{font-size:22px}
+#stopcard.off{display:none}
+#player{margin-top:auto;background:var(--card);border-radius:16px;padding:12px 14px}
+.row{display:flex;gap:10px;align-items:center}
+.btn{flex:1;font-size:24px;padding:14px 0;border:0;border-radius:12px;background:#2a2d34;color:#fff;font-weight:800}
+.btn.main{background:var(--acc);flex:1.3}
+input[type=range]{flex:1;height:40px;accent-color:var(--acc)}
+.t{font-size:15px;color:var(--mut);font-variant-numeric:tabular-nums;min-width:50px;text-align:center}
+#status{font-size:14px;color:var(--mut);margin-top:6px}
+#start{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;flex-direction:column;gap:22px;align-items:center;justify-content:center;z-index:9}
+#start button{font-size:40px;font-weight:900;padding:30px 60px;border:0;border-radius:24px;background:var(--acc);color:#fff}
+#start button.sec{font-size:22px;padding:16px 30px;background:#333}
+.lbl{font:800 17px system-ui;fill:#fff;paint-order:stroke;stroke:#000;stroke-width:5px}
+.plbl{font:700 14px system-ui;fill:#ffd9a8;paint-order:stroke;stroke:#000;stroke-width:4px}
+</style>
+<div id="app">
+  <div id="map"><svg id="svg" preserveAspectRatio="xMidYMid slice"></svg>
+    <div class="mapbtns"><button id="zin">＋</button><button id="zout">－</button><button id="ov">Whole route</button></div>
+    <div id="maptag">Map data © OpenStreetMap contributors · Photos: Wikipedia/Wikimedia Commons</div></div>
+  <div id="side">
+    <div id="stopcard">
+      <div id="kicker">Haylee's Des Moines Tour</div><div id="title">Ready when you are</div><div id="area"></div>
+      <div id="desc" style="margin-top:12px">Tap Start. The map follows the car, landmark photos pop up as we pass them, and each stop's audio plays as we get close.</div>
+    </div>
+    <div id="poi"><div id="poidir"></div><img id="poiimg" alt=""><div id="poiname"></div><div id="poicap"></div></div>
+    <div id="nextup"></div>
+    <div id="player">
+      <div class="row"><span class="t" id="tc">0:00</span><input id="scrub" type="range" min="0" max="1000" value="0"><span class="t" id="td">0:00</span></div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="prev">⏮</button><button class="btn" id="back">−10s</button>
+        <button class="btn main" id="pp">▶︎</button>
+        <button class="btn" id="fwd">+10s</button><button class="btn" id="next">⏭</button>
+      </div>
+      <div id="status"><span id="gps">GPS: off</span> · <label><input type="checkbox" id="auto" checked> auto-play by GPS</label></div>
+    </div>
+  </div>
+</div>
+<div id="start"><button id="go">▶︎ Start tour</button><button id="demo" class="sec">Demo drive (test at home, no GPS)</button></div>
+<audio id="a" preload="auto"></audio>
+<script src="data.js?v=1"></script>
+<script>
+const T=window.TOUR||{};
+const STOPS=T.stops, POIS=T.pois||[], ROUTE=T.route||STOPS.map(s=>[s.lat,s.lon]);
+const $=id=>document.getElementById(id),a=$('a'),svg=$('svg'),NS='http://www.w3.org/2000/svg';
+const Q=[],BLOB={};let cur=-1,dragging=false,pos=null,heading=0,overview=false,zoom=3200,poiShown=null,poiUntil=0,demo=null;
+const fired=new Set(),seenPoi=new Set();
+const fmt=s=>{s=Math.max(0,s|0);return (s/60|0)+':'+String(s%60).padStart(2,'0')};
+const R2D=180/Math.PI,D2R=Math.PI/180;
+function dist(a1,o1,a2,o2){const R=6371e3,dl=(a2-a1)*D2R,dn=(o2-o1)*D2R,x=Math.sin(dl/2)**2+Math.cos(a1*D2R)*Math.cos(a2*D2R)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+function bearing(a1,o1,a2,o2){const y=Math.sin((o2-o1)*D2R)*Math.cos(a2*D2R),x=Math.cos(a1*D2R)*Math.sin(a2*D2R)-Math.sin(a1*D2R)*Math.cos(a2*D2R)*Math.cos((o2-o1)*D2R);return (Math.atan2(y,x)*R2D+360)%360}
+// projection in meters-ish
+const LAT0=41.58,KX=111320*Math.cos(LAT0*D2R),KY=110540,P=(lat,lon)=>[(lon+93.75)*KX,(LAT0-lat)*KY];
+const pts=arr=>arr.map(p=>{const q=P(p[0],p[1]);return q[0].toFixed(0)+','+q[1].toFixed(0)}).join(' ');
+function el(t,at,parent){const e=document.createElementNS(NS,t);for(const k in at)e.setAttribute(k,at[k]);(parent||svg).appendChild(e);return e}
+// static layers
+const gBase=el('g',{}),gRoute=el('g',{}),gMarks=el('g',{}),gCar=el('g',{});
+const STY={motorway:['#d9a520',34],trunk:['#c98f2a',26],primary:['#5d636e',20],secondary:['#43474f',14],river:['#3b8fe8',40],water:['#3b8fe8',0]};
+(T.water||[]).forEach(w=>el('polygon',{points:pts(w),fill:'#2f74c0',opacity:.8},gBase));
+(T.roads||[]).filter(r=>r.t!=='secondary').sort((x,y)=>(STY[x.t]?.[1]||0)-(STY[y.t]?.[1]||0)).forEach(r=>{const s=STY[r.t]||STY.secondary;
+  el('polyline',{points:pts(r.p),fill:'none',stroke:s[0],'stroke-width':s[1],'stroke-linecap':'round','stroke-linejoin':'round',opacity:r.t==='river'?.75:1},gBase)});
+el('polyline',{points:pts(ROUTE),fill:'none',stroke:'#000','stroke-width':30,'stroke-linejoin':'round',opacity:.5},gRoute);
+const routeLine=el('polyline',{points:pts(ROUTE),fill:'none',stroke:'#f26a1b','stroke-width':18,'stroke-linejoin':'round','stroke-linecap':'round'},gRoute);
+const car=el('g',{},gCar);el('circle',{r:120,fill:'#3b82f6',opacity:.22},car);
+el('path',{d:'M0,-75 L52,60 L0,32 L-52,60 Z',fill:'#3b82f6',stroke:'#fff','stroke-width':14,'stroke-linejoin':'round'},car);
+car.style.display='none';
+function drawMarks(){gMarks.innerHTML='';
+  POIS.forEach(p=>{const [x,y]=P(p.lat,p.lon);el('circle',{cx:x,cy:y,r:p===poiShown?46:30,fill:p===poiShown?'#ffd9a8':'#7a4a1a',stroke:'#ffd9a8','stroke-width':8},gMarks);
+    const t=el('text',{x:x+48,y:y+6,class:'plbl'},gMarks);t.textContent=p.name;t.style.fontSize=(overview?60:Math.max(40,zoom/60))+'px'});
+  STOPS.forEach((s,i)=>{const [x,y]=P(s.lat,s.lon);
+    el('circle',{cx:x,cy:y,r:i===cur?95:70,fill:i===cur?'#f26a1b':fired.has(i)?'#555':'#fff',stroke:'#000','stroke-width':10},gMarks);
+    const t=el('text',{x,y:y+22,'text-anchor':'middle',class:'lbl'},gMarks);t.textContent=i===0?'⌂':i;t.style.fontSize='64px';t.style.stroke='none';t.style.fill=i===cur||fired.has(i)?'#fff':'#000';
+    const l=el('text',{x:x+110,y:y+22,class:'lbl'},gMarks);l.textContent=i===0?'Home':s.n;l.style.fontSize=(overview?90:Math.max(56,zoom/45))+'px'})}
+// camera
+let vb=null;
+function target(){
+  if(overview||!pos){const xs=[],ys=[];ROUTE.forEach(p=>{const q=P(p[0],p[1]);xs.push(q[0]);ys.push(q[1])});
+    const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),pad=600;return [x0-pad,y0-pad,x1-x0+2*pad,y1-y0+2*pad]}
+  const [x,y]=P(pos.lat,pos.lon);const r=$('map').getBoundingClientRect(),ar=r.width/r.height;const w=zoom*ar,h=zoom;
+  // look ahead a little in the direction of travel
+  const ax=Math.sin(heading*D2R)*zoom*.18,ay=-Math.cos(heading*D2R)*zoom*.18;
+  return [x+ax-w/2,y+ay-h/2,w,h]}
+function anim(){svg.setAttribute('viewBox',target().join(' '))}
+function placeCar(){anim();if(!pos)return;const [x,y]=P(pos.lat,pos.lon);car.style.display='';car.setAttribute('transform',`translate(${x},${y}) rotate(${heading}) scale(${Math.max(.6,(overview?3:zoom/2600))})`)}
+// UI
+function showStop(i){const s=STOPS[i];$('kicker').textContent=i===0?"Haylee's Des Moines Tour":(s.area||'');$('title').textContent=s.n;$('area').textContent='';$('desc').textContent=s.d;nextLine()}
+function nextLine(){const nx=Math.max(cur,...fired,...Q)+1;if(nx>=STOPS.length){$('nextup').textContent='';return}
+  let t='Next stop: '+STOPS[nx].n;if(pos)t+=' · '+(dist(pos.lat,pos.lon,STOPS[nx].lat,STOPS[nx].lon)/1609).toFixed(1)+' mi';if(Q.length)t='Up next after this clip: '+STOPS[Q[0]].n+(Q.length>1?' (+'+(Q.length-1)+' more)':'')+' · '+t;$('nextup').textContent=t}
+function pre(i){const s=STOPS[i];if(!s||!s.f||BLOB[s.f])return;BLOB[s.f]='loading';fetch(s.f).then(r=>{if(!r.ok)throw 0;return r.blob()}).then(b=>BLOB[s.f]=URL.createObjectURL(b)).catch(()=>delete BLOB[s.f])}
+function play(i){if(i<0||i>=STOPS.length)return;cur=i;fired.add(i);
+  if(!STOPS[i].f){a.pause();showStop(i);drawMarks();pre(i+1);return}
+  const u=BLOB[STOPS[i].f];a.src=(u&&u!=='loading')?u:STOPS[i].f;a.play().catch(()=>{});pre(i+1);pre(i+2);showStop(i);drawMarks()}
+function showPoi(p,dir){poiShown=p;poiUntil=Date.now()+45000;$('poidir').textContent=dir;$('poiname').textContent=p.name;$('poicap').textContent=p.cap;
+  const im=$('poiimg');if(p.img){im.src=p.img;im.style.display=''}else im.style.display='none';
+  $('poi').classList.add('on');$('stopcard').classList.add('off');drawMarks()}
+function hidePoi(){poiShown=null;$('poi').classList.remove('on');$('stopcard').classList.remove('off');drawMarks()}
+function side(p){const rel=((bearing(pos.lat,pos.lon,p.lat,p.lon)-heading)+540)%360-180;
+  if(Math.abs(rel)<25)return 'Straight ahead';if(Math.abs(rel)>150)return 'Just behind us';return rel>0?'Look right →':'← Look left'}
+function checkPois(){
+  if(poiShown&&(Date.now()>poiUntil||dist(pos.lat,pos.lon,poiShown.lat,poiShown.lon)>(poiShown.r||400)+300))hidePoi();
+  else if(poiShown)$('poidir').textContent=side(poiShown);
+  let best=null,bd=1e9;POIS.forEach(p=>{if(seenPoi.has(p.k))return;const d=dist(pos.lat,pos.lon,p.lat,p.lon);if(d<(p.r||400)&&d<bd){bd=d;best=p}});
+  // downtown is dense: let a new landmark take over once the current one has had 15 seconds
+  if(best&&(!poiShown||Date.now()>poiUntil-30000)){seenPoi.add(best.k);showPoi(best,side(best))}}
+a.onended=()=>{if(Q.length)play(Q.shift());else{const n=STOPS[cur+1];if(n&&n.auto&&n.f){fired.add(cur+1);play(cur+1)}}};
+a.onplay=a.onpause=()=>$('pp').textContent=a.paused?'▶︎':'❚❚';
+a.ontimeupdate=()=>{if(!dragging&&a.duration)$('scrub').value=a.currentTime/a.duration*1000;$('tc').textContent=fmt(a.currentTime);$('td').textContent=fmt(a.duration||0)};
+const sc=$('scrub');sc.oninput=()=>{dragging=true;if(a.duration)$('tc').textContent=fmt(sc.value/1000*a.duration)};
+sc.onchange=()=>{if(a.duration)a.currentTime=sc.value/1000*a.duration;dragging=false};
+$('back').onclick=()=>a.currentTime=Math.max(0,a.currentTime-10);
+$('fwd').onclick=()=>a.currentTime=Math.min(a.duration||0,a.currentTime+10);
+$('pp').onclick=()=>{if(cur<0)return play(0);a.paused?a.play():a.pause()};
+$('next').onclick=()=>{Q.length=0;play(cur+1)};$('prev').onclick=()=>{Q.length=0;play(Math.max(0,cur-1))};
+$('zin').onclick=()=>{overview=false;zoom=Math.max(1200,zoom/1.4);drawMarks();placeCar()};
+$('zout').onclick=()=>{overview=false;zoom=Math.min(20000,zoom*1.4);drawMarks();placeCar()};
+$('ov').onclick=()=>{overview=!overview;$('ov').textContent=overview?'Follow car':'Whole route';drawMarks();placeCar()};
+let last=null;
+function onPos(lat,lon,acc,hd,speed){
+  if(last&&dist(last.lat,last.lon,lat,lon)>6)heading=(hd!=null&&!isNaN(hd)&&speed>1)?hd:bearing(last.lat,last.lon,lat,lon);
+  if(!last||dist(last.lat,last.lon,lat,lon)>6)last={lat,lon};
+  pos={lat,lon};$('gps').textContent=demo?'DEMO drive':'GPS: on (±'+Math.round(acc)+' m)';
+  if($('auto').checked){const nx=Math.max(cur,...fired,...Q)+1,st=STOPS[nx];if(st&&st.r&&dist(lat,lon,st.lat,st.lon)<=st.r){fired.add(nx);if(a.paused||a.ended)play(nx);else Q.push(nx)}}
+  checkPois();nextLine();placeCar()}
+async function keepAwake(){try{await navigator.wakeLock.request('screen')}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')keepAwake()});
+function begin(){$('start').remove();keepAwake();pre(0);play(0)}
+$('go').onclick=()=>{begin();
+  if(navigator.geolocation)navigator.geolocation.watchPosition(p=>onPos(p.coords.latitude,p.coords.longitude,p.coords.accuracy,p.coords.heading,p.coords.speed),
+    e=>$('gps').textContent='GPS blocked ('+e.message+'). Use ⏭',{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
+  else $('gps').textContent='No GPS here. Use ⏭'};
+// Demo: drive the route at ~150 mph equivalent so a test lap takes a few minutes
+$('demo').onclick=()=>{begin();a.muted=false;let i=0,f=0;demo=setInterval(()=>{if(i>=ROUTE.length-1){clearInterval(demo);return}
+  const A=ROUTE[i],B=ROUTE[i+1],seg=dist(A[0],A[1],B[0],B[1])||1;let m=60;while(m>0&&i<ROUTE.length-1){const L=dist(ROUTE[i][0],ROUTE[i][1],ROUTE[i+1][0],ROUTE[i+1][1])||1,left=(1-f)*L;if(m<left){f+=m/L;m=0}else{m-=left;f=0;i++}}
+  const C=ROUTE[Math.min(i+1,ROUTE.length-1)],D=ROUTE[i];onPos(D[0]+(C[0]-D[0])*f,D[1]+(C[1]-D[1])*f,5,null,0)},500)};
+drawMarks();anim();
+// Fetch the real driving line in the browser when the build couldn't (cached per page)
+if(T.osrm){const key='route:'+location.pathname,apply=c=>{ROUTE.length=0;c.forEach(p=>ROUTE.push(p));gRoute.querySelectorAll('polyline').forEach(pl=>pl.setAttribute('points',pts(ROUTE)));anim()};
+  try{const c=JSON.parse(localStorage.getItem(key)||'null');if(c)apply(c)}catch(e){}
+  fetch('https://router.project-osrm.org/route/v1/driving/'+T.osrm.map(p=>p[1]+','+p[0]).join(';')+'?overview=full&geometries=geojson')
+   .then(r=>r.json()).then(j=>{const c=j.routes[0].geometry.coordinates.map(q=>[+q[1].toFixed(5),+q[0].toFixed(5)]);apply(c);try{localStorage.setItem(key,JSON.stringify(c))}catch(e){}}).catch(()=>{})}
+</script>
