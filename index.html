@@ -6,7 +6,7 @@
 #app{display:grid;grid-template-columns:1.2fr 1fr;height:100vh}
 @media (max-width:800px){#app{grid-template-columns:1fr;grid-template-rows:45vh 1fr}body{overflow:auto}}
 #map{position:relative;background:#16181d;overflow:hidden}
-svg{width:100%;height:100%;display:block}
+svg{width:100%;height:100%;display:block;shape-rendering:optimizeSpeed;}
 .mapbtns{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:8px}
 .mapbtns button{font-size:18px;font-weight:800;padding:12px 16px;border:0;border-radius:10px;background:#000a;color:#fff}
 #maptag{position:absolute;left:12px;bottom:8px;font-size:12px;color:#888}
@@ -79,7 +79,7 @@ function el(t,at,parent){const e=document.createElementNS(NS,t);for(const k in a
 const gBase=el('g',{}),gRoute=el('g',{}),gMarks=el('g',{}),gCar=el('g',{});
 const STY={motorway:['#d9a520',34],trunk:['#c98f2a',26],primary:['#5d636e',20],secondary:['#43474f',14],river:['#3b8fe8',40],water:['#3b8fe8',0]};
 (T.water||[]).forEach(w=>el('polygon',{points:pts(w),fill:'#2f74c0',opacity:.8},gBase));
-(T.roads||[]).sort((x,y)=>(STY[x.t]?.[1]||0)-(STY[y.t]?.[1]||0)).forEach(r=>{const s=STY[r.t]||STY.secondary;
+(T.roads||[]).filter(r=>r.t!=='secondary').sort((x,y)=>(STY[x.t]?.[1]||0)-(STY[y.t]?.[1]||0)).forEach(r=>{const s=STY[r.t]||STY.secondary;
   el('polyline',{points:pts(r.p),fill:'none',stroke:s[0],'stroke-width':s[1],'stroke-linecap':'round','stroke-linejoin':'round',opacity:r.t==='river'?.75:1},gBase)});
 el('polyline',{points:pts(ROUTE),fill:'none',stroke:'#000','stroke-width':30,'stroke-linejoin':'round',opacity:.5},gRoute);
 const routeLine=el('polyline',{points:pts(ROUTE),fill:'none',stroke:'#f26a1b','stroke-width':18,'stroke-linejoin':'round','stroke-linecap':'round'},gRoute);
@@ -102,13 +102,13 @@ function target(){
   // look ahead a little in the direction of travel
   const ax=Math.sin(heading*D2R)*zoom*.18,ay=-Math.cos(heading*D2R)*zoom*.18;
   return [x+ax-w/2,y+ay-h/2,w,h]}
-function anim(){const t=target();if(!vb)vb=t;vb=vb.map((v,i)=>v+(t[i]-v)*.12);svg.setAttribute('viewBox',vb.join(' '));requestAnimationFrame(anim)}
-function placeCar(){if(!pos)return;const [x,y]=P(pos.lat,pos.lon);car.style.display='';car.setAttribute('transform',`translate(${x},${y}) rotate(${heading}) scale(${Math.max(.6,(overview?3:zoom/2600))})`)}
+function anim(){svg.setAttribute('viewBox',target().join(' '))}
+function placeCar(){anim();if(!pos)return;const [x,y]=P(pos.lat,pos.lon);car.style.display='';car.setAttribute('transform',`translate(${x},${y}) rotate(${heading}) scale(${Math.max(.6,(overview?3:zoom/2600))})`)}
 // UI
 function showStop(i){const s=STOPS[i];$('kicker').textContent=i===0?"Haylee's Des Moines Tour":'Part '+i+' of '+(STOPS.length-1);$('title').textContent=s.n;$('area').textContent=s.area;$('desc').textContent=s.d;nextLine()}
 function nextLine(){const nx=cur+1;if(nx>=STOPS.length){$('nextup').textContent='';return}
   let t='Next stop: '+STOPS[nx].n;if(pos)t+=' · '+(dist(pos.lat,pos.lon,STOPS[nx].lat,STOPS[nx].lon)/1609).toFixed(1)+' mi';if(queued!=null)t+=' · plays when this clip ends';$('nextup').textContent=t}
-function play(i){if(i<0||i>=STOPS.length)return;cur=i;fired.add(i);queued=null;a.src=STOPS[i].f;a.play().catch(()=>{});showStop(i);drawMarks()}
+function play(i){if(i<0||i>=STOPS.length)return;cur=i;fired.add(i);queued=null;a.src=STOPS[i].f;const nx=STOPS[i+1];if(nx&&nx.f){const x=new Audio();x.preload='auto';x.src=nx.f}a.play().catch(()=>{});showStop(i);drawMarks()}
 function showPoi(p,dir){poiShown=p;poiUntil=Date.now()+45000;$('poidir').textContent=dir;$('poiname').textContent=p.name;$('poicap').textContent=p.cap;
   const im=$('poiimg');if(p.img){im.src=p.img;im.style.display=''}else im.style.display='none';
   $('poi').classList.add('on');$('stopcard').classList.add('off');drawMarks()}
@@ -153,7 +153,5 @@ $('go').onclick=()=>{begin();
 $('demo').onclick=()=>{begin();a.muted=false;let i=0,f=0;demo=setInterval(()=>{if(i>=ROUTE.length-1){clearInterval(demo);return}
   const A=ROUTE[i],B=ROUTE[i+1],seg=dist(A[0],A[1],B[0],B[1])||1;f+=60/seg;while(f>=1&&i<ROUTE.length-1){f-=1;i++}
   const C=ROUTE[Math.min(i+1,ROUTE.length-1)],D=ROUTE[i];onPos(D[0]+(C[0]-D[0])*f,D[1]+(C[1]-D[1])*f,5,null,0)},500)};
-STOPS.forEach(s=>{const x=new Audio();x.preload='auto';x.src=s.f});
-POIS.forEach(p=>{if(p.img){const im=new Image();im.src=p.img}});
 drawMarks();anim();
 </script>
