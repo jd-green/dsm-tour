@@ -48,7 +48,7 @@ td{border-top:1px solid var(--line);padding:8px 4px;vertical-align:top}
 <section id="stops"></section>
 
 <h2 id="apts">Apartments I'm touring</h2>
-<div id="aptlist"></div>
+<div class="card pad">Today's drive goes right past two of these at stop 5: Harbach Lofts (300 SW 5th St, in the Court Ave district) and City Square Lofts (240 E Walnut, in the East Village). E 300 is probably in the East Village too. Jordan Creek, Waukee and Kettlestone are out west, near home.</div><div id="aptlist"></div>
 
 <h2>Questions to ask on tours</h2>
 <div class="card pad"><ul>
@@ -109,7 +109,9 @@ h+=`<div class="card" id="s${i}"><img src="../img/${s[2]}" alt="" loading="lazy"
 <textarea data-k="stop${i}" placeholder="Notes on ${esc(s[0])}…"></textarea></div></div>`});
 n+='<a href="#apts">Apartments</a><a href="#later">Come back to</a><a href="#notes">My notes</a>';
 document.getElementById('stops').innerHTML=h;document.getElementById('nav').innerHTML=n;
-let a='';'ABCDE'.split('').forEach(L=>{a+=`<div class="card pad"><div class="st"><span class="num">${L}</span>Apartment ${L}</div><div class="apt">
+const APTS=[["Kettlestone Peak (Waukee)","Tue 3:00–4:00"],["West Lights","Tue 2:00"],["Renew Jordan Creek","Wed 9:30 or 10:30"],["The Reserve at Jordan Creek","Wed ~10:30 (requested)"],["Requested tour (they'll confirm)","Wed 11:00"],["Fireside Waukee","Wed 12:00–1:00"],["City Square Lofts (downtown)","Wed 2:00"],["Harbach Lofts (downtown)","Wed 3:00–4:00"],["E 300 (East Village)","Wed ~3:30 (requested)"]];
+const LET='ABCDEFGHI'.split('');APTS.forEach((x,i)=>{const L=LET[i];if(D['apt'+L+'_place']===undefined)D['apt'+L+'_place']=x[0];if(D['apt'+L+'_when']===undefined)D['apt'+L+'_when']=x[1]});
+let a='';LET.forEach(L=>{a+=`<div class="card pad"><div class="st"><span class="num">${L}</span>${esc(D['apt'+L+'_place']||'Apartment '+L)}</div><div class="apt">
 <div class="full"><label>Place / address</label><input data-k="apt${L}_place"></div>
 <div><label>When</label><input data-k="apt${L}_when"></div><div><label>Rent</label><input data-k="apt${L}_rent" inputmode="decimal"></div>
 <div class="full"><label>Gut feeling</label><textarea data-k="apt${L}_gut" style="min-height:60px"></textarea></div></div></div>`});
@@ -119,7 +121,7 @@ document.querySelectorAll('[data-k]').forEach(el=>{el.value=D[el.dataset.k]||'';
 document.querySelectorAll('[data-t]').forEach(el=>{const k=el.dataset.t;el.classList.toggle('on',!!D[k]);el.onclick=()=>{D[k]=!D[k];el.classList.toggle('on',D[k]);save()}});
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,2200)}
 function text(){let o="Haylee's Des Moines Tour – my notes\n\n";STOPS.forEach((s,i)=>{const f=[D['like'+i]&&'Like it',D['back'+i]&&'Come back'].filter(Boolean).join(', ');o+=`${i+1}. ${s[0]}${f?' ['+f+']':''}\n${D['stop'+i]||''}\n\n`});
-o+="APARTMENTS\n";'ABCDE'.split('').forEach(L=>{const p=D['apt'+L+'_place'];if(p||D['apt'+L+'_gut'])o+=`${L}. ${p||''} | ${D['apt'+L+'_when']||''} | ${D['apt'+L+'_rent']||''}\n   ${D['apt'+L+'_gut']||''}\n`});
+o+="APARTMENTS\n";LET.forEach(L=>{const p=D['apt'+L+'_place'];if(p||D['apt'+L+'_gut'])o+=`${L}. ${p||''} | ${D['apt'+L+'_when']||''} | ${D['apt'+L+'_rent']||''}\n   ${D['apt'+L+'_gut']||''}\n`});
 o+="\nMY QUESTIONS\n"+(D.myq||'')+"\n\nMY NOTES\n"+(D.general||'')+"\n";return o}
 document.getElementById('copy').onclick=async()=>{const t=text();try{if(navigator.share&&/Mobi/.test(navigator.userAgent)){await navigator.share({title:'My tour notes',text:t});return}await navigator.clipboard.writeText(t);toast('Copied')}catch(e){try{await navigator.clipboard.writeText(t);toast('Copied')}catch(_){prompt('Copy your notes:',t)}}};
 document.getElementById('dl').onclick=()=>{const b=new Blob([text()],{type:'text/plain'});const u=URL.createObjectURL(b);const l=document.createElement('a');l.href=u;l.download='haylee-tour-notes.txt';document.body.appendChild(l);l.click();l.remove();toast('Saved')};
