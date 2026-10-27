@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f2a24">
+<title>Haylee's Des Moines Tour</title>
+<style>
+:root{--bg:#f6f3ec;--card:#fff;--ink:#1f2a24;--mute:#6b7069;--acc:#2f6b4f;--line:#e3ddd0;--hi:#fff6d6}
+@media (prefers-color-scheme:dark){:root{--bg:#141815;--card:#1d221e;--ink:#ecebe5;--mute:#a3a89f;--acc:#7fc4a0;--line:#2e352f;--hi:#2c2a1c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+header{padding:28px 16px 12px;max-width:640px;margin:auto}
+.kick{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);font-weight:700}
+h1{font-size:30px;line-height:1.1;margin:6px 0 8px}
+h2{font-size:20px;margin:28px 0 10px}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap;padding:8px 12px}
+nav a{display:inline-block;padding:6px 10px;margin-right:4px;border-radius:99px;background:var(--card);border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:14px}
+main{max-width:640px;margin:auto;padding:0 16px 120px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:14px 0;overflow:hidden}
+.card img{width:100%;height:170px;object-fit:cover;display:block}
+.pad{padding:14px}
+.num{display:inline-flex;width:28px;height:28px;border-radius:50%;background:var(--acc);color:var(--bg);align-items:center;justify-content:center;font-weight:800;margin-right:8px}
+.st{font-size:20px;font-weight:750;display:flex;align-items:center}
+.sub{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:4px 0 8px}
+.chips{display:flex;gap:8px;margin:10px 0}
+.chip{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:15px}
+.chip.on{background:var(--acc);color:var(--bg);border-color:var(--acc)}
+textarea,input{width:100%;font:inherit;color:var(--ink);background:var(--hi);border:1px solid var(--line);border-radius:10px;padding:10px}
+textarea{min-height:84px;resize:vertical}
+label{font-size:13px;color:var(--mute);display:block;margin:8px 0 4px}
+.apt{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.apt .full{grid-column:1/-1}
+ul{padding-left:20px;margin:6px 0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td{border-top:1px solid var(--line);padding:8px 4px;vertical-align:top}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:9}
+.bar button,.bar a{flex:1;padding:12px;border-radius:10px;border:0;background:var(--acc);color:var(--bg);font:600 15px inherit;text-align:center;text-decoration:none}
+.bar .sec{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+.saved{font-size:12px;color:var(--mute);text-align:right;height:16px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:99px;font-size:14px;opacity:0;transition:.3s;pointer-events:none}
+</style></head><body>
+<header>
+<div class="kick">About 2 hours · Kettlestone Peak to home</div>
+<h1>Haylee's Des Moines Tour</h1>
+<div>Follow along stop by stop. Tap Like it or Come back, and jot anything. Your notes save on this phone automatically.</div>
+</header>
+<nav id="nav"></nav>
+<main>
+<section id="stops"></section>
+
+<h2 id="apts">Apartments I'm touring</h2>
+<div class="card pad">This drive goes past every apartment on your list: Kettlestone Peak (stop 1), Fireside (2), West Light (3), the Reserve and ReNew (4), E300 and City Square Lofts (8), and Harbach Lofts (9).</div><div id="aptlist"></div>
+
+<h2>Questions to ask on tours</h2>
+<div class="card pad"><ul>
+<li>What's included: water, trash, internet, parking?</li>
+<li>Is there a garage or covered spot? (Iowa winters.)</li>
+<li>Laundry in the unit or shared?</li>
+<li>Lease length options, and the move-in date?</li>
+<li>How are maintenance requests handled, and how fast?</li>
+<li>Pet policy and fees, even if just someday.</li></ul>
+<label>My questions</label><textarea data-k="myq" placeholder="Anything you want to ask…"></textarea></div>
+
+<h2>Apartment hunting cheat sheet</h2>
+<div class="card pad"><table>
+<tr><td><b>West Des Moines / Jordan Creek</b><br>Newer complexes, shopping, quiet · $$</td><td>1BR roughly $1,000–1,250. Easy parking, everything in 10 min.</td></tr>
+<tr><td><b>Waukee</b><br>Newest suburb, growing fast · $$</td><td>Lots of brand-new buildings; a bit farther from downtown.</td></tr>
+<tr><td><b>Clive / Urbandale</b><br>Established suburbs · $–$$</td><td>Mix of older and newer complexes; near I-35/80.</td></tr>
+<tr><td><b>Downtown / East Village</b><br>Walkable, lofts, nightlife · $$–$$$</td><td>Ask about parking costs and noise on weekend nights.</td></tr>
+<tr><td><b>Ingersoll / Sherman Hill</b><br>Old houses split into apartments · $–$$</td><td>Lots of character; check heat, laundry and parking.</td></tr>
+<tr><td><b>Drake</b><br>Student neighborhood · $</td><td>Cheaper; leases often follow the school year.</td></tr>
+<tr><td><b>Johnston / Ankeny</b><br>Family suburbs to the north · $$</td><td>Nice and newer, but 20+ min to West Des Moines.</td></tr>
+</table></div>
+
+<h2 id="later">Places to come back to</h2>
+<div class="card pad">
+<b>Quiet, free, good alone</b><ul><li>Des Moines Art Center (4700 Grand)</li><li>Pappajohn Sculpture Park</li><li>Central Library (get a free card)</li><li>State Capitol + law library</li><li>Jordan House museum (Fri &amp; Sun tours)</li><li>Varsity Cinema near Drake</li></ul>
+<b>Walk around &amp; look at shops</b><ul><li>Valley Junction, 5th St (5 min from home)</li><li>East Village (Raygun, boutiques, salons)</li><li>Ingersoll Ave restaurants &amp; coffee</li><li>Beaverdale shops on Beaver Ave</li><li>Jordan Creek Town Center</li><li>Reese Marie salons: Cumming &amp; Valley Junction</li></ul>
+<b>Outside</b><ul><li>Gray's Lake: 2-mile loop, rainbow bridge at night</li><li>Principal Riverwalk</li><li>Brenton outdoor ice rink (winter)</li><li>Saylorville Lake beach (summer)</li><li>Living History Farms</li><li>Middlebrook: town garden, u-pick flowers, Wilson's Orchard</li></ul>
+<b>On the calendar</b><ul><li>Downtown Farmers' Market: Saturdays, May–Oct</li><li>Drake Relays: late April</li><li>Des Moines Arts Festival: June</li><li>Iowa State Fair: Aug 12–22, 2027 (butter cow!)</li><li>Beaverdale Fall Festival: September</li><li>Iowa Cubs at Principal Park: summer</li></ul>
+</div>
+
+<h2 id="notes">My notes</h2>
+<div class="card pad"><textarea data-k="general" style="min-height:180px" placeholder="Anything at all…"></textarea></div>
+
+<h2>Getting around</h2>
+<div class="card pad"><ul>
+<li><b>Two rivers.</b> The Raccoon runs along the bottom, just south of where we start, near home. The Des Moines River comes down from the top. They meet just south of downtown, where the city started.</li>
+<li><b>I-235, the spine.</b> Straight through the middle, east to west. Almost everywhere is about 5 minutes from it. Locals say "north of 235" or "south of 235."</li>
+<li><b>35/80, the ring.</b> Wraps the top and left edges like an upside-down L. Johnston and Ankeny are north; Clive and Waukee are west.</li>
+<li><b>Street numbers.</b> Bigger number, farther west. 63rd Street is the line between West Des Moines and Des Moines.</li></ul>
+</div>
+</main>
+<div id="toast"></div>
+<div class="bar"><button id="copy">Copy all notes</button><button class="sec" id="dl">Save as file</button></div>
+<script>
+const STOPS=[
+["kett","Kettlestone Peak","Waukee · where we start","","Kettlestone is Waukee's newest planned district near I-80 and Grand Prairie Parkway: new apartments, shops and offices going up around a long greenway. Kettlestone Peak is the apartment tour we start from."],
+["wauk","Downtown Waukee & Fireside","Waukee · the Triangle","","Waukee's small original downtown, known as the Triangle, with local restaurants and shops. Fireside at Waukee is right here at 210 NW 2nd St (tour Wed 12:00–1:00)."],
+["west","West Light & Hickman Road","Waukee · Hickman Rd","","Hickman Road is the main east–west road across the northern suburbs. West Light is at 1345 E Hickman Rd near Alice's Road (tour Tue 2:00), listed around $1,175–2,050."],
+["jc","Jordan Creek","West Des Moines","jordan_creek.jpg","Iowa's biggest mall (Iowa's only Apple Store), groceries and lots of newer complexes; 1BR usually about $1,000–1,250. The Reserve at Jordan Creek is at 6185 Village View Dr (Wed ~10:30) and ReNew Jordan Creek is at 210 S Prairie View Dr (Wed 9:30 or 10:30)."],
+["mh","Merle Hay & Urbandale","Douglas Ave","merle_hay.jpg","Named for one of the first Americans killed in World War I, from Glidden, Iowa. Mall from 1959 (once monastery land): Target, dine-in movie theater, arcade, pickleball."],
+["6","Beaverdale","Beaver Ave","beaverdale.jpg","Old stagecoach road, brick-paved in 1917. Storybook \"Beaverdale Brick\" houses, a little shop strip and a fall festival parade. Mostly houses; small apartments only."],
+["5","Drake","University Ave · north of 235","drake_stadium.jpg","Private college from 1881. Drake Relays every April, the Beautiful Bulldog contest, the Varsity Cinema. Apartments are older and cheaper; ask about August leases."],
+["4","Capitol & East Village","East of the river","capitol.jpg","The Capitol: five domes, real gold, free to tour; see the law library. East Village: Raygun, boutiques, salons. Two of your tours are here: E300 at 300 E Grand Ave (Wed ~3:30) and City Square Lofts at 240 E Walnut St (Wed 2:00)."],
+["court","Court Ave, the river & Harbach Lofts","Downtown","court_ave.jpg","Court Ave: restaurants and the Saturday farmers' market (May–Oct). The rivers meet just south, where Fort Des Moines stood in 1843. Harbach Lofts is at 300 SW 5th St in an old warehouse (Wed 3:00–4:00), studios from about $900."],
+["3","Sculpture Park & downtown","Downtown west · free","sculpture_park.jpg","Pappajohn Sculpture Park (Nomade, the letters man; Keith Haring; Kusama). Central Library next door. 4+ miles of skywalks connect 55 buildings. 801 Grand is Iowa's tallest building."],
+["grays","Gray's Lake","Fleur Dr · free","grays_lake.jpg","A 2-mile loop trail around the lake, with a pedestrian bridge that lights up in rainbow colors at night. Easy parking off Fleur Drive."],
+["2","Terrace Hill","Grand Ave","terrace_hill.jpg","Iowa's first millionaire built it, then went broke; now the governor lives on the top floor. Tours March–December by reservation."],
+["1","Ingersoll & the Art Center","Ingersoll Ave & 4700 Grand","art_center.jpg","Ingersoll: an old streetcar street, now local restaurants and coffee. The Art Center is a free art museum in Greenwood Park with wings by three famous architects. Rose garden, pond, trails."],
+["0","Valley Junction","West Des Moines · 5th St","valley_junction.jpg","The old railroad town (1890s Rock Island repair shops). Once saloons and pool halls; flooded six feet deep in 1993; now boutiques, antiques, coffee and lots of independent salons on 5th Street."],
+["jh","Jordan House","West Des Moines · last stop before home","","West Des Moines' oldest house, built by James Jordan (Jordan Creek is named for him). Now a museum, with tours on Fridays and Sundays."]];
+const SHORT=['Kettlestone','Waukee','West Light','Jordan Creek','Merle Hay','Beaverdale','Drake','Capitol','Court Ave','Sculpture Park',"Gray's Lake",'Terrace Hill','Ingersoll','Valley Jct','Jordan House'];
+const KEY='haylee-tour-notes-v1';let D={};try{D=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let h='',n='';STOPS.forEach((s,i)=>{const k=s[0];n+=`<a href="#s${i}">${i+1} ${SHORT[i]}</a>`;
+h+=`<div class="card" id="s${i}">${s[3]?`<img src="../../img/${s[3]}" alt="" loading="lazy" onerror="this.remove()">`:""}<div class="pad"><div class="st"><span class="num">${i+1}</span>${esc(s[1])}</div><div class="sub">${esc(s[2])}</div><div>${esc(s[4])}</div>
+<div class="chips"><button class="chip" data-t="like${k}">♥ Like it</button><button class="chip" data-t="back${k}">↩ Come back</button></div>
+<textarea data-k="stop${k}" placeholder="Notes on ${esc(s[1])}…"></textarea></div></div>`});
+n+='<a href="#apts">Apartments</a><a href="#later">Come back to</a><a href="#notes">My notes</a>';
+document.getElementById('stops').innerHTML=h;document.getElementById('nav').innerHTML=n;
+const APTS=[["Kettlestone Peak (Waukee)","Tue 3:00–4:00"],["West Lights","Tue 2:00"],["Renew Jordan Creek","Wed 9:30 or 10:30"],["The Reserve at Jordan Creek","Wed ~10:30 (requested)"],["Requested tour (they'll confirm)","Wed 11:00"],["Fireside Waukee","Wed 12:00–1:00"],["City Square Lofts (downtown)","Wed 2:00"],["Harbach Lofts (downtown)","Wed 3:00–4:00"],["E 300 (East Village)","Wed ~3:30 (requested)"]];
+const LET='ABCDEFGHI'.split('');APTS.forEach((x,i)=>{const L=LET[i];if(D['apt'+L+'_place']===undefined)D['apt'+L+'_place']=x[0];if(D['apt'+L+'_when']===undefined)D['apt'+L+'_when']=x[1]});
+let a='';LET.forEach(L=>{a+=`<div class="card pad"><div class="st"><span class="num">${L}</span>${esc(D['apt'+L+'_place']||'Apartment '+L)}</div><div class="apt">
+<div class="full"><label>Place / address</label><input data-k="apt${L}_place"></div>
+<div><label>When</label><input data-k="apt${L}_when"></div><div><label>Rent</label><input data-k="apt${L}_rent" inputmode="decimal"></div>
+<div class="full"><label>Gut feeling</label><textarea data-k="apt${L}_gut" style="min-height:60px"></textarea></div></div></div>`});
+document.getElementById('aptlist').innerHTML=a;
+function save(){D._saved=new Date().toLocaleString();try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){toast('Could not save on this phone, use Copy all notes')}}
+document.querySelectorAll('[data-k]').forEach(el=>{el.value=D[el.dataset.k]||'';el.addEventListener('input',()=>{D[el.dataset.k]=el.value;save()})});
+document.querySelectorAll('[data-t]').forEach(el=>{const k=el.dataset.t;el.classList.toggle('on',!!D[k]);el.onclick=()=>{D[k]=!D[k];el.classList.toggle('on',D[k]);save()}});
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,2200)}
+function text(){let o="Haylee's Des Moines Tour – my notes\n\n";STOPS.forEach((s,i)=>{const k=s[0],f=[D['like'+k]&&'Like it',D['back'+k]&&'Come back'].filter(Boolean).join(', ');o+=`${i+1}. ${s[1]}${f?' ['+f+']':''}\n${D['stop'+k]||''}\n\n`});
+o+="APARTMENTS\n";LET.forEach(L=>{const p=D['apt'+L+'_place'];if(p||D['apt'+L+'_gut'])o+=`${L}. ${p||''} | ${D['apt'+L+'_when']||''} | ${D['apt'+L+'_rent']||''}\n   ${D['apt'+L+'_gut']||''}\n`});
+o+="\nMY QUESTIONS\n"+(D.myq||'')+"\n\nMY NOTES\n"+(D.general||'')+"\n";return o}
+document.getElementById('copy').onclick=async()=>{const t=text();try{if(navigator.share&&/Mobi/.test(navigator.userAgent)){await navigator.share({title:'My tour notes',text:t});return}await navigator.clipboard.writeText(t);toast('Copied')}catch(e){try{await navigator.clipboard.writeText(t);toast('Copied')}catch(_){prompt('Copy your notes:',t)}}};
+document.getElementById('dl').onclick=()=>{const b=new Blob([text()],{type:'text/plain'});const u=URL.createObjectURL(b);const l=document.createElement('a');l.href=u;l.download='haylee-tour-notes.txt';document.body.appendChild(l);l.click();l.remove();toast('Saved')};
+</script></body></html>
