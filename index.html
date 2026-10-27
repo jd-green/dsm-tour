@@ -108,7 +108,11 @@ function placeCar(){anim();if(!pos)return;const [x,y]=P(pos.lat,pos.lon);car.sty
 function showStop(i){const s=STOPS[i];$('kicker').textContent=i===0?"Haylee's Des Moines Tour":'Part '+i+' of '+(STOPS.length-1);$('title').textContent=s.n;$('area').textContent=s.area;$('desc').textContent=s.d;nextLine()}
 function nextLine(){const nx=cur+1;if(nx>=STOPS.length){$('nextup').textContent='';return}
   let t='Next stop: '+STOPS[nx].n;if(pos)t+=' · '+(dist(pos.lat,pos.lon,STOPS[nx].lat,STOPS[nx].lon)/1609).toFixed(1)+' mi';if(queued!=null)t+=' · plays when this clip ends';$('nextup').textContent=t}
-function play(i){if(i<0||i>=STOPS.length)return;cur=i;fired.add(i);queued=null;a.src=STOPS[i].f;const nx=STOPS[i+1];if(nx&&nx.f){const x=new Audio();x.preload='auto';x.src=nx.f}a.play().catch(()=>{});showStop(i);drawMarks()}
+// Download each clip whole and play it from memory, so a weak cell signal can't starve playback mid-clip.
+const clips=new Map(),loading=new Set();
+function prefetch(i){for(let j=i;j<=i+2&&j<STOPS.length;j++){const f=STOPS[j].f;if(!f||clips.has(f)||loading.has(f))continue;loading.add(f);
+  fetch(f).then(r=>{if(!r.ok)throw 0;return r.blob()}).then(b=>clips.set(f,URL.createObjectURL(b))).catch(()=>{}).finally(()=>loading.delete(f))}}
+function play(i){if(i<0||i>=STOPS.length)return;cur=i;fired.add(i);queued=null;a.src=clips.get(STOPS[i].f)||STOPS[i].f;prefetch(i);a.play().catch(()=>{});showStop(i);drawMarks()}
 function showPoi(p,dir){poiShown=p;poiUntil=Date.now()+45000;$('poidir').textContent=dir;$('poiname').textContent=p.name;$('poicap').textContent=p.cap;
   const im=$('poiimg');if(p.img){im.src=p.img;im.style.display=''}else im.style.display='none';
   $('poi').classList.add('on');$('stopcard').classList.add('off');drawMarks()}
@@ -153,5 +157,5 @@ $('go').onclick=()=>{begin();
 $('demo').onclick=()=>{begin();a.muted=false;let i=0,f=0;demo=setInterval(()=>{if(i>=ROUTE.length-1){clearInterval(demo);return}
   const A=ROUTE[i],B=ROUTE[i+1],seg=dist(A[0],A[1],B[0],B[1])||1;f+=60/seg;while(f>=1&&i<ROUTE.length-1){f-=1;i++}
   const C=ROUTE[Math.min(i+1,ROUTE.length-1)],D=ROUTE[i];onPos(D[0]+(C[0]-D[0])*f,D[1]+(C[1]-D[1])*f,5,null,0)},500)};
-drawMarks();anim();
+prefetch(0);drawMarks();anim();
 </script>
