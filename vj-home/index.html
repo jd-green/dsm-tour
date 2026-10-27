@@ -124,7 +124,7 @@ function checkPois(){
   let best=null,bd=1e9;POIS.forEach(p=>{if(seenPoi.has(p.k))return;const d=dist(pos.lat,pos.lon,p.lat,p.lon);if(d<(p.r||400)&&d<bd){bd=d;best=p}});
   // downtown is dense: let a new landmark take over once the current one has had 15 seconds
   if(best&&(!poiShown||Date.now()>poiUntil-30000)){seenPoi.add(best.k);showPoi(best,side(best))}}
-a.onended=()=>{if(Q.length)play(Q.shift())};
+a.onended=()=>{if(Q.length)play(Q.shift());else{const n=STOPS[cur+1];if(n&&n.auto&&n.f){fired.add(cur+1);play(cur+1)}}};
 a.onplay=a.onpause=()=>$('pp').textContent=a.paused?'▶︎':'❚❚';
 a.ontimeupdate=()=>{if(!dragging&&a.duration)$('scrub').value=a.currentTime/a.duration*1000;$('tc').textContent=fmt(a.currentTime);$('td').textContent=fmt(a.duration||0)};
 const sc=$('scrub');sc.oninput=()=>{dragging=true;if(a.duration)$('tc').textContent=fmt(sc.value/1000*a.duration)};
